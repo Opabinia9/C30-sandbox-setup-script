@@ -1,5 +1,5 @@
 USERNAME="Opabinia9"
-REPONAME=
+REPONAME="C30-sandbox-setup-script"
 USEREMAIL="sebastionprice@gmail.com"
 NAME="sebastion"
 REPOS=("git-intro" "holbertonschool-shell" "holbertonschool-low_level_programming")
@@ -8,13 +8,13 @@ echo "hello geting bashrc";
 if [[ -f ~/.bashrc ]]; then
   mv ~/.bashrc ~/.bashrc.bak;
 fi
-wget -qO ~/.bashrc ""
+wget -qO ~/.bashrc "https://raw.githubusercontent.com/${USERNAME}/${REPONAME}/refs/heads/main/.bashrc"
 
 echo "hello geting bash_aliases";
 if [[ -f ~/.bash_aliases ]]; then
   mv ~/.bash_aliases ~/.bash_aliases.bak;
 fi
-wget -qO ~/.bash_aliases ""
+wget -qO ~/.bash_aliases "https://raw.githubusercontent.com/${USERNAME}/${REPONAME}/refs/heads/main/.bash_aliases"
 
 git config --global user.email "$USEREMAIL";
 git config --global user.name "$NAME";
