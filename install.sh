@@ -2,7 +2,6 @@ USERNAME="Opabinia9"
 REPONAME="C30-sandbox-setup-script"
 USEREMAIL="sebastionprice@gmail.com"
 NAME="sebastion"
-REPOS=("git-intro" "holbertonschool-shell" "holbertonschool-low_level_programming")
 
 echo "hello geting bashrc";
 if [[ -f ~/.bashrc ]]; then
@@ -20,13 +19,50 @@ git config --global user.email "$USEREMAIL";
 git config --global user.name "$NAME";
 git config --global credential.helper 'cache --timeout=7200';
 
+echo "hello getting repository list";
+RESPONSE_RAW=$(curl -s -w "\n%{http_code}" \
+    -H "Accept: application/vnd.github+json" \
+    -H "Authorization: Bearer $(\
+        printf "protocol=https\nhost=github.com\n" |\
+        git credential fill |\
+        tee >(git credential approve) |\
+        grep 'password' | cut -d '=' -f 2\
+    )" \
+    -H "X-GitHub-Api-Version: 2026-03-10" \
+    "https://api.github.com/user/repos");
 
-echo "and downloading your repos";
-for r in "${REPOS[@]}"; do
-	if [ ! -d "$HOME/$r" ]; then
-		git clone "https://github.com/$USERNAME/$r.git";
-	fi
-done;
+RESPONSE=$(head -n -1 <<< "$RESPONSE_RAW");
+RESPONSE_STATUS=$(tail -n 1 <<< "$RESPONSE_RAW");
+
+if [[ "$RESPONSE_STATUS" == "200" ]]; then
+    REPOS=(\
+        $(grep '"full_name":' <<< "$RESPONSE" | cut -d ':' -f 2 | tr -d ' ,' | tr '\n' ' ')\
+    )
+
+    echo "got repository list, installing fzf...";
+
+    sudo apt-get install -qq fzf > /dev/null;
+    SELECTED_REPOS=(\
+        $(printf "%s\n" "${REPOS[@]}" |\
+            fzf --multi --height=40% --reverse --border --cycle\
+            --prompt="Select repositories to clone (Tab to mark, Enter to confirm, Esc for no selection) > " |\
+            tr -d '"')\
+    )
+
+    echo "and downloading your repos";
+    for r in "${SELECTED_REPOS[@]}"; do
+        if [ ! -d "$HOME/$r" ]; then
+            git clone "https://github.com/$r.git";
+        fi
+    done;
+
+elif [[ "$RESPONSE_STATUS" == "401" ]]; then
+    echo "Error: bad credentials - invalid Github token"
+elif [[ "$RESPONSE_STATUS" == "418" ]]; then
+    echo "Error? server is a teapot"
+else
+    echo "Error: wget failed with status: $RESPONSE_STATUS"
+fi
 
 rmdf()
 {
