@@ -51,8 +51,9 @@ if [[ "$RESPONSE_STATUS" == "200" ]]; then
 
     echo "and downloading your repos";
     for r in "${SELECTED_REPOS[@]}"; do
-        if [ ! -d "$HOME/$r" ]; then
-            git clone "https://github.com/$r.git";
+        repo_name=$(cut -d '/' -f 2 <<< "$r");
+        if [ ! -d "$HOME/$repo_name" ]; then
+            git clone "https://github.com/$r.git" "$HOME/$repo_name";
         fi
     done;
 
